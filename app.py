@@ -4,187 +4,475 @@ import numpy as np
 import pandas as pd
 from io import BytesIO
 
-st.set_page_config(page_title="Smart Exam Checker", page_icon="📝", layout="wide")
+# =========================================================
+# SMART EXAM CHECKER
+# Desain antarmuka diperbarui; algoritma pemeriksaan dipertahankan.
+# =========================================================
 
+st.set_page_config(
+    page_title="Smart Exam Checker",
+    page_icon="📝",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+# ------------------------- THEME -------------------------
 st.markdown("""
 <style>
-.stApp { background-color: #f4f7fb; }
-.main-title { background: linear-gradient(120deg, #142d4e, #2364a6);
-padding: 30px; border-radius: 15px; color: white; margin-bottom: 25px; }
-.main-title h1 { color: white; }
-.main-title p { color: #e1ecf8; font-size: 16px; }
-.section-title { color: #183b60; font-size: 21px; font-weight: 700; margin-top: 15px; }
-div[data-testid="stMetric"] { background-color: white; border: 1px solid #e1e8f0;
-padding: 18px; border-radius: 12px; }
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+
+:root {
+    --navy: #101b35;
+    --navy-2: #172747;
+    --blue: #356df3;
+    --blue-light: #eaf0ff;
+    --text: #17233d;
+    --muted: #71809a;
+    --line: #e7ecf4;
+    --surface: #ffffff;
+}
+html, body, [class*="css"] {
+    font-family: 'DM Sans', sans-serif;
+}
+.stApp {
+    background:
+      radial-gradient(circle at 82% 0%, rgba(70, 116, 245, .10), transparent 27rem),
+      #f4f7fc;
+    color: var(--text);
+}
+.block-container {
+    max-width: 1450px;
+    padding-top: 2rem;
+    padding-bottom: 3rem;
+}
+header[data-testid="stHeader"] { background: transparent; }
+[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #101b35 0%, #172747 100%);
+    border-right: 1px solid rgba(255,255,255,.08);
+}
+[data-testid="stSidebar"] * { color: #edf3ff !important; }
+[data-testid="stSidebar"] .stTextInput input,
+[data-testid="stSidebar"] .stNumberInput input {
+    background: rgba(255,255,255,.10) !important;
+    color: white !important;
+    border: 1px solid rgba(255,255,255,.18) !important;
+    border-radius: 10px !important;
+}
+[data-testid="stSidebar"] [data-baseweb="input"] {
+    background: transparent;
+}
+[data-testid="stSidebar"] hr { border-color: rgba(255,255,255,.18); }
+[data-testid="stSidebar"] [data-testid="stCaptionContainer"] { color: #b9c7e0 !important; }
+
+.hero {
+    position: relative;
+    overflow: hidden;
+    padding: 30px 34px;
+    border-radius: 22px;
+    color: white;
+    background: linear-gradient(120deg, #101b35 0%, #1c3768 65%, #356df3 125%);
+    box-shadow: 0 16px 38px rgba(26, 55, 105, .16);
+    margin-bottom: 24px;
+}
+.hero:after {
+    content: "✓";
+    position: absolute;
+    right: 42px;
+    top: -42px;
+    font-size: 190px;
+    font-weight: 800;
+    color: rgba(255,255,255,.055);
+}
+.hero-kicker {
+    color: #a9c3ff;
+    font-size: .76rem;
+    font-weight: 800;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    margin-bottom: 9px;
+}
+.hero-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: clamp(1.8rem, 3vw, 2.65rem);
+    font-weight: 800;
+    line-height: 1.15;
+    margin: 0;
+    color: #fff;
+}
+.hero-subtitle {
+    color: #d4def2;
+    font-size: 1rem;
+    margin-top: 10px;
+    max-width: 680px;
+}
+.hero-tag {
+    display: inline-block;
+    margin-top: 18px;
+    padding: 7px 12px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.16);
+    color: #eef4ff;
+    font-size: .78rem;
+    font-weight: 600;
+}
+.section-heading {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    margin: 27px 0 12px;
+    color: #17233d;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 1.13rem;
+    font-weight: 800;
+}
+.section-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    color: #fff;
+    background: #356df3;
+    font-size: .88rem;
+}
+.helper-text {
+    color: #71809a;
+    font-size: .88rem;
+    margin: -4px 0 13px 41px;
+}
+div[data-testid="stFileUploader"] section {
+    background: #fff;
+    border: 1.5px dashed #b9c9e8;
+    border-radius: 15px;
+}
+div[data-testid="stFileUploader"] section:hover {
+    border-color: #356df3;
+}
+div[data-testid="stSelectbox"] > div > div,
+div[data-testid="stTextInput"] input,
+div[data-testid="stNumberInput"] input {
+    border-radius: 10px !important;
+}
+div[data-testid="stSelectbox"] label,
+div[data-testid="stTextInput"] label,
+div[data-testid="stNumberInput"] label {
+    font-weight: 600;
+    color: #35445f;
+}
+div[data-testid="stButton"] button[kind="primary"] {
+    background: linear-gradient(100deg, #285ce5, #477cf7);
+    border: 0;
+    border-radius: 12px;
+    min-height: 3.1rem;
+    font-weight: 800;
+    letter-spacing: .02em;
+    box-shadow: 0 8px 18px rgba(53,109,243,.22);
+}
+div[data-testid="stButton"] button[kind="primary"]:hover {
+    background: linear-gradient(100deg, #1e4fcf, #356df3);
+    border: 0;
+    transform: translateY(-1px);
+}
+div[data-testid="stDownloadButton"] button {
+    background: #142544;
+    color: #fff;
+    border: 0;
+    border-radius: 11px;
+    min-height: 2.9rem;
+    font-weight: 700;
+}
+div[data-testid="stMetric"] {
+    background: #fff;
+    border: 1px solid #e7ecf4;
+    border-radius: 15px;
+    padding: 16px 17px;
+    box-shadow: 0 5px 18px rgba(27,48,85,.045);
+}
+div[data-testid="stMetricLabel"] { color: #71809a; font-weight: 600; }
+div[data-testid="stMetricValue"] { color: #17233d; font-weight: 800; }
+div[data-testid="stDataFrame"] {
+    border: 1px solid #e7ecf4;
+    border-radius: 13px;
+    overflow: hidden;
+}
+div[data-testid="stAlert"] { border-radius: 12px; }
+div[data-testid="stExpander"] {
+    background: #fff;
+    border: 1px solid #e7ecf4;
+    border-radius: 12px;
+}
+.footer {
+    margin-top: 35px;
+    padding-top: 16px;
+    border-top: 1px solid #e3e9f2;
+    color: #8793a8;
+    text-align: center;
+    font-size: .8rem;
+}
 </style>
 """, unsafe_allow_html=True)
 
+# ------------------------- HEADER -------------------------
 st.markdown("""
-<div class="main-title">
-<h1>📝 Smart Exam Checker</h1>
-<p>Sistem Pemeriksaan Lembar Jawaban Pilihan Ganda Otomatis</p>
-<p>Berbasis Pengolahan Citra Digital Menggunakan OpenCV</p>
+<div class="hero">
+  <div class="hero-kicker">Automated answer sheet evaluation</div>
+  <div class="hero-title">📝 Smart Exam Checker</div>
+  <div class="hero-subtitle">
+    Sistem pemeriksaan lembar jawaban pilihan ganda secara otomatis.
+    Unggah lembar jawaban, tentukan kunci, lalu dapatkan hasil koreksi dan nilai.
+  </div>
+  <div class="hero-tag">20 Soal &nbsp; • &nbsp; 2 Kolom &nbsp; • &nbsp; Pilihan A–D</div>
 </div>
 """, unsafe_allow_html=True)
 
-st.write("Atur jumlah soal dan pilihan jawaban, lalu unggah lembar jawaban peserta.")
+st.info("Pastikan lembar jawaban menggunakan template 20 soal, dua kolom, dengan pilihan A–D.")
 
-st.markdown('<p class="section-title">⚙️ Pengaturan Ujian</p>', unsafe_allow_html=True)
-cfg1, cfg2 = st.columns(2)
-with cfg1:
-    jumlah_soal = st.number_input("Jumlah soal", min_value=1, max_value=100, value=20, step=1)
-with cfg2:
-    jumlah_pilihan = st.selectbox("Jumlah pilihan jawaban", options=[2, 3, 4, 5], index=2,
-                                  format_func=lambda n: f"{n} pilihan ({', '.join('ABCDE'[:n])})")
-pilihan = list("ABCDE"[:jumlah_pilihan])
+# ------------------------- SIDEBAR -------------------------
+with st.sidebar:
+    st.markdown("## 👤 Identitas Peserta")
+    st.caption("Isi data peserta sebelum melakukan pemeriksaan.")
+    nama = st.text_input("Nama peserta", placeholder="Contoh: Carolina")
+    nomor = st.text_input("Nomor peserta", placeholder="Contoh: 018")
+    st.divider()
+    st.markdown("## ⚙️ Pengaturan Nilai")
+    bobot = st.number_input(
+        "Poin setiap jawaban benar",
+        min_value=0.0,
+        max_value=100.0,
+        value=5.0,
+        step=0.5,
+        help="Contoh: 5 poin × 20 soal = nilai maksimal 100.",
+    )
+    st.caption("Jawaban kosong dan ganda tidak mendapat poin.")
+    st.divider()
+    st.caption("SMART EXAM CHECKER · PROTOTIPE")
 
-st.markdown('<p class="section-title">🔑 Pengaturan Kunci Jawaban</p>', unsafe_allow_html=True)
-st.write("Pilih kunci jawaban yang benar untuk setiap nomor soal.")
-kunci_jawaban = []
-kolom_per_baris = st.columns(4)
-for i in range(int(jumlah_soal)):
-    with kolom_per_baris[i % 4]:
-        kunci = st.selectbox(
-            f"Soal {i + 1}", options=pilihan, index=0, key=f"kunci_{i}_{jumlah_pilihan}_{jumlah_soal}"
-        )
-        kunci_jawaban.append(kunci)
+# ------------------------- INPUT IMAGE -------------------------
+st.markdown('<div class="section-heading"><span class="section-number">1</span> Unggah lembar jawaban</div>', unsafe_allow_html=True)
+st.markdown('<div class="helper-text">Pilih foto atau hasil scan lembar jawaban peserta. Pastikan gambar utuh dan tidak buram.</div>', unsafe_allow_html=True)
 
-st.divider()
-st.markdown('<p class="section-title">👤 Identitas Peserta</p>', unsafe_allow_html=True)
-c1, c2 = st.columns(2)
-with c1:
-    nama = st.text_input("Nama Peserta")
-with c2:
-    nomor = st.text_input("Nomor Peserta")
+uploaded = st.file_uploader(
+    "Pilih gambar lembar jawaban",
+    type=["png", "jpg", "jpeg"],
+    help="Gunakan gambar utuh, jelas, dan tidak terpotong.",
+    label_visibility="collapsed",
+)
+if uploaded:
+    st.success(f"File berhasil dipilih: {uploaded.name}")
+    with st.expander("Pratinjau lembar jawaban", expanded=True):
+        st.image(uploaded, caption="Gambar yang akan diperiksa", use_container_width=True)
 
-st.markdown('<p class="section-title">📂 Unggah Lembar Jawaban</p>', unsafe_allow_html=True)
-file = st.file_uploader("Pilih gambar lembar jawaban peserta", type=["png", "jpg", "jpeg"])
+# ------------------------- ANSWER KEY -------------------------
+st.markdown('<div class="section-heading"><span class="section-number">2</span> Masukkan kunci jawaban</div>', unsafe_allow_html=True)
+st.markdown('<div class="helper-text">Pilih jawaban yang benar untuk setiap nomor soal.</div>', unsafe_allow_html=True)
 
-if file is not None:
-    raw = np.asarray(bytearray(file.getvalue()), dtype=np.uint8)
-    gambar = cv2.imdecode(raw, cv2.IMREAD_COLOR)
-    if gambar is None:
-        st.error("Gambar tidak dapat dibaca. Coba gunakan file PNG atau JPG.")
-    else:
-        left, right = st.columns(2)
-        with left:
-            st.markdown("**Pratinjau Lembar Jawaban**")
-            st.image(cv2.cvtColor(gambar, cv2.COLOR_BGR2RGB), use_container_width=True)
-        with right:
-            st.markdown("**Informasi Gambar**")
-            st.write("Nama file:", file.name)
-            st.write("Lebar:", gambar.shape[1], "pixel")
-            st.write("Tinggi:", gambar.shape[0], "pixel")
-            st.write("Jumlah soal:", int(jumlah_soal))
-            st.write("Pilihan jawaban:", ", ".join(pilihan))
-        st.divider()
-
-        st.warning(
-            "Catatan tahap pengembangan: pengaturan jumlah soal dan pilihan sudah fleksibel, "
-            "tetapi pembacaan gambar otomatis saat ini masih memakai koordinat template lama "
-            "(20 soal, dua kolom, pilihan A–D). Untuk jumlah atau desain lain, tahap kalibrasi "
-            "dan deteksi otomatis perlu diselesaikan terlebih dahulu."
+keys = {}
+left, right = st.columns(2)
+for q in range(1, 21):
+    target = left if q <= 10 else right
+    with target:
+        keys[q] = st.selectbox(
+            f"Soal {q}",
+            ["A", "B", "C", "D"],
+            key=f"final_key_{q}",
+            label_visibility="visible",
         )
 
-        if st.button("🔍 PERIKSA JAWABAN", type="primary", use_container_width=True):
-            if int(jumlah_soal) > 20 or jumlah_pilihan > 4:
-                st.error(
-                    "Pembacaan otomatis untuk konfigurasi ini belum tersedia. "
-                    "Untuk sementara, gunakan maksimal 20 soal dengan pilihan A–D "
-                    "sampai fitur kalibrasi dikembangkan."
-                )
-            else:
-                # Koordinat ini hanya berlaku untuk template 20 soal lama.
-                gambar_ukur = cv2.resize(gambar, (1024, 1536))
-                gray = cv2.cvtColor(gambar_ukur, cv2.COLOR_BGR2GRAY)
-                _, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)
+# ------------------------- PROCESS -------------------------
+st.markdown('<div class="section-heading"><span class="section-number">3</span> Proses pemeriksaan</div>', unsafe_allow_html=True)
+st.markdown('<div class="helper-text">Tekan tombol di bawah untuk membaca arsiran, mencocokkan kunci, dan menghitung nilai.</div>', unsafe_allow_html=True)
 
-                x_kiri = [172, 264, 354, 444]
-                x_kanan = [652, 743, 832, 922]
-                posisi_y = [378, 468, 557, 647, 736, 826, 916, 1006, 1095, 1184]
+run_check = st.button(
+    "🔎  BACA, KOREKSI, DAN HITUNG NILAI",
+    type="primary",
+    use_container_width=True,
+    disabled=uploaded is None,
+)
 
-                hasil = []
-                for kolom in [x_kiri, x_kanan]:
-                    for y in posisi_y:
-                        nilai_soal = []
-                        for x in kolom[:jumlah_pilihan]:
-                            mask = np.zeros(thresh.shape, dtype=np.uint8)
-                            cv2.circle(mask, (x, y), 13, 255, -1)
-                            hitam = np.count_nonzero((thresh == 0) & (mask == 255))
-                            nilai_soal.append(hitam)
+if run_check:
+    raw = np.frombuffer(uploaded.getvalue(), np.uint8)
+    original = cv2.imdecode(raw, cv2.IMREAD_COLOR)
+    if original is None:
+        st.error("Gambar tidak dapat dibaca. Silakan unggah ulang file PNG atau JPG.")
+        st.stop()
 
-                        terisi = [idx for idx, jumlah in enumerate(nilai_soal) if jumlah >= 80]
-                        if len(terisi) == 0:
-                            jawaban = "KOSONG"
-                        elif len(terisi) > 1:
-                            jawaban = "GANDA"
-                        else:
-                            jawaban = pilihan[terisi[0]]
-                        hasil.append(jawaban)
+    h0, w0 = original.shape[:2]
+    img = cv2.resize(original, (900, int(h0 * 900 / w0)))
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    blur = cv2.GaussianBlur(gray, (5, 5), 1.2)
+    H, W = gray.shape
+    circles = cv2.HoughCircles(
+        blur,
+        cv2.HOUGH_GRADIENT,
+        dp=1.15,
+        minDist=18,
+        param1=100,
+        param2=27,
+        minRadius=12,
+        maxRadius=30,
+    )
+    if circles is None:
+        st.error("Bulatan tidak terdeteksi. Gunakan gambar yang jelas dan tidak terpotong.")
+        st.stop()
 
-                hasil = hasil[:int(jumlah_soal)]
-                benar = salah = kosong = ganda = 0
-                data = []
-                for i, jawaban in enumerate(hasil):
-                    kunci = kunci_jawaban[i]
-                    if jawaban == "KOSONG":
-                        status = "Kosong"; kosong += 1
-                    elif jawaban == "GANDA":
-                        status = "Ganda"; ganda += 1
-                    elif jawaban == kunci:
-                        status = "Benar"; benar += 1
-                    else:
-                        status = "Salah"; salah += 1
-                    data.append({
-                        "Nomor Soal": i + 1,
-                        "Jawaban Peserta": jawaban,
-                        "Kunci Jawaban": kunci,
-                        "Status": status
-                    })
+    candidates = []
+    for x, y, r in np.round(circles[0]).astype(int):
+        if 0.12 * H < y < 0.91 * H and 0.12 * W < x < 0.94 * W:
+            if all(np.hypot(x - a, y - b) > 16 for a, b, _ in candidates):
+                candidates.append((int(x), int(y), int(r)))
+    if len(candidates) < 30:
+        st.error(f"Kandidat bulatan terlalu sedikit ({len(candidates)}). Pastikan gambar utuh dan jelas.")
+        st.stop()
 
-                nilai = (benar / int(jumlah_soal)) * 100
-                st.divider()
-                st.markdown('<p class="section-title">📊 Hasil Pemeriksaan</p>', unsafe_allow_html=True)
-                df = pd.DataFrame(data)
-                st.dataframe(df, use_container_width=True, hide_index=True)
+    def cluster(values, k):
+        samples = np.float32(values).reshape(-1, 1)
+        criteria = (
+            cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER,
+            100,
+            0.2,
+        )
+        _, labels, centers = cv2.kmeans(
+            samples, k, None, criteria, 10, cv2.KMEANS_PP_CENTERS
+        )
+        centers = centers.flatten()
+        order = np.argsort(centers)
+        remap = {int(old): new for new, old in enumerate(order)}
+        return centers[order], np.array([remap[int(v)] for v in labels.flatten()])
 
-                st.markdown('<p class="section-title">📈 Ringkasan Hasil</p>', unsafe_allow_html=True)
-                m1, m2, m3, m4 = st.columns(4)
-                m1.metric("✅ Benar", benar)
-                m2.metric("❌ Salah", salah)
-                m3.metric("⚪ Kosong", kosong)
-                m4.metric("🔁 Ganda", ganda)
+    xcenters, xl = cluster([p[0] for p in candidates], 8)
+    ycenters, yl = cluster([p[1] for p in candidates], 10)
+    grid = {}
+    for i, p in enumerate(candidates):
+        cell = (int(xl[i]), int(yl[i]))
+        distance = abs(p[0] - xcenters[cell[0]]) + abs(p[1] - ycenters[cell[1]])
+        if cell not in grid or distance < grid[cell][0]:
+            grid[cell] = (distance, p)
 
-                st.markdown("**Grafik Hasil Pemeriksaan**")
-                grafik = pd.DataFrame({"Jumlah": [benar, salah, kosong, ganda]},
-                                      index=["Benar", "Salah", "Kosong", "Ganda"])
-                st.bar_chart(grafik)
+    if len(grid) != 80:
+        st.error(
+            f"Terdeteksi {len(grid)} dari 80 posisi bulatan. "
+            "Pastikan gambar tidak terpotong dan sesuai dengan template 20 soal."
+        )
+        st.stop()
 
-                st.divider()
-                st.markdown('<p class="section-title">🏆 Nilai Akhir Peserta</p>', unsafe_allow_html=True)
-                st.metric("Nilai Akhir", f"{nilai:.1f} / 100")
-                if nilai == 100:
-                    st.success("Sangat baik! Semua jawaban benar.")
-                elif nilai >= 60:
-                    st.success("Pemeriksaan selesai. Hasil berhasil dihitung.")
-                else:
-                    st.warning("Pemeriksaan selesai. Silakan periksa hasil jawaban.")
+    details = []
+    overlay = img.copy()
+    letters = ["A", "B", "C", "D"]
+    for row in range(10):
+        for col in range(8):
+            _, (x, y, r) = grid[(col, row)]
+            mask = np.zeros(gray.shape, dtype=np.uint8)
+            cv2.circle(mask, (x, y), max(5, int(r * 0.52)), 255, -1)
+            ratio = float(np.mean(gray[mask == 255] < 110))
+            q = row + 1 if col < 4 else row + 11
+            details.append({"Nomor soal": q, "Pilihan": letters[col % 4], "Rasio gelap": ratio})
 
-                ringkasan = pd.DataFrame([{
-                    "Nama Peserta": nama, "Nomor Peserta": nomor,
-                    "Jumlah Soal": int(jumlah_soal), "Jumlah Pilihan": jumlah_pilihan,
-                    "Benar": benar, "Salah": salah, "Kosong": kosong,
-                    "Ganda": ganda, "Nilai Akhir": nilai
-                }])
-                excel = BytesIO()
-                with pd.ExcelWriter(excel, engine="openpyxl") as writer:
-                    df.to_excel(writer, sheet_name="Detail Jawaban", index=False)
-                    ringkasan.to_excel(writer, sheet_name="Ringkasan", index=False)
-                st.download_button(
-                    label="📥 Download Hasil Excel", data=excel.getvalue(),
-                    file_name="hasil_pemeriksaan.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
-                st.caption("Smart Exam Checker | Pengolahan Citra Digital")
-else:
-    st.info("Silakan unggah gambar lembar jawaban untuk memulai pemeriksaan.")
+    detail_df = pd.DataFrame(details)
+    rows = []
+    for q in range(1, 21):
+        qdata = detail_df[detail_df["Nomor soal"] == q]
+        marked = qdata[qdata["Rasio gelap"] >= 0.60]["Pilihan"].tolist()
+        if len(marked) == 0:
+            answer, status = "-", "KOSONG"
+        elif len(marked) == 1:
+            answer, status = marked[0], "TERBACA"
+        else:
+            answer, status = ", ".join(marked), "GANDA"
+        rows.append({"Nomor soal": q, "Jawaban peserta": answer, "Status": status})
+
+    result = pd.DataFrame(rows)
+    result["Kunci jawaban"] = result["Nomor soal"].map(keys)
+    result["Hasil"] = result.apply(
+        lambda r: "BENAR"
+        if r["Status"] == "TERBACA" and r["Jawaban peserta"] == r["Kunci jawaban"]
+        else ("SALAH" if r["Status"] == "TERBACA" else r["Status"]),
+        axis=1,
+    )
+
+    correct = int((result["Hasil"] == "BENAR").sum())
+    wrong = int((result["Hasil"] == "SALAH").sum())
+    blank = int((result["Hasil"] == "KOSONG").sum())
+    double = int((result["Hasil"] == "GANDA").sum())
+    score = min(100.0, correct * float(bobot))
+
+    st.divider()
+    st.markdown('<div class="section-heading"><span class="section-number">4</span> Hasil pemeriksaan</div>', unsafe_allow_html=True)
+    info1, info2 = st.columns(2)
+    info1.write(f"**Nama peserta:** {nama or 'Belum diisi'}")
+    info2.write(f"**Nomor peserta:** {nomor or 'Belum diisi'}")
+
+    metrics = st.columns(5)
+    for col, label, value in zip(
+        metrics,
+        ["Benar", "Salah", "Kosong", "Ganda", "Nilai"],
+        [correct, wrong, blank, double, f"{score:.1f}"],
+    ):
+        col.metric(label, value)
+
+    st.markdown("#### Rincian jawaban")
+    st.dataframe(result, use_container_width=True, hide_index=True)
+
+    for row in range(10):
+        for col in range(8):
+            _, (x, y, r) = grid[(col, row)]
+            q = row + 1 if col < 4 else row + 11
+            letter = letters[col % 4]
+            ratio = detail_df[
+                (detail_df["Nomor soal"] == q) & (detail_df["Pilihan"] == letter)
+            ]["Rasio gelap"].iloc[0]
+            color = (0, 180, 0) if ratio >= 0.60 else (0, 140, 220)
+            cv2.circle(overlay, (x, y), max(5, int(r * 0.52)), color, 2)
+
+    with st.expander("Lihat gambar dengan penanda hasil deteksi"):
+        st.image(
+            cv2.cvtColor(overlay, cv2.COLOR_BGR2RGB),
+            caption="Lingkaran hijau = dianggap terisi; oranye = dianggap kosong.",
+            use_container_width=True,
+        )
+    with st.expander("Lihat rasio gelap setiap pilihan"):
+        display_detail = detail_df.copy()
+        display_detail["Rasio gelap"] = display_detail["Rasio gelap"].round(3)
+        st.dataframe(display_detail, use_container_width=True, hide_index=True)
+
+    export = result.copy()
+    export.insert(0, "Nama peserta", nama)
+    export.insert(1, "Nomor peserta", nomor)
+    summary = pd.DataFrame(
+        [{
+            "Nama peserta": nama,
+            "Nomor peserta": nomor,
+            "Jumlah soal": 20,
+            "Benar": correct,
+            "Salah": wrong,
+            "Kosong": blank,
+            "Ganda": double,
+            "Nilai": score,
+        }]
+    )
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        summary.to_excel(writer, index=False, sheet_name="Ringkasan")
+        export.to_excel(writer, index=False, sheet_name="Detail Jawaban")
+        detail_df.assign(**{"Rasio gelap": detail_df["Rasio gelap"].round(3)}).to_excel(
+            writer, index=False, sheet_name="Rasio Gelap"
+        )
+
+    st.download_button(
+        "📥  Unduh hasil pemeriksaan Excel",
+        data=output.getvalue(),
+        file_name="hasil_smart_exam_checker.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True,
+    )
+    st.caption(
+        "Catatan: versi ini disiapkan untuk template 20 soal dua kolom A–D yang telah diuji. "
+        "Uji kembali dengan beberapa lembar sebelum digunakan dalam ujian sebenarnya."
+    )
+
+st.markdown("""
+<div class="footer">
+  Smart Exam Checker · Prototipe pemeriksaan lembar jawaban pilihan ganda
+</div>
+""", unsafe_allow_html=True)
